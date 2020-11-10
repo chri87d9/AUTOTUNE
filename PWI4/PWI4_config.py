@@ -20,3 +20,7 @@ site = 3 #Mt. Kent Observatory
 park_alt = 25 #parking altitude for the telescope
 park_azm = 180 #parking azimuth for the telescope.
 
+#Database configuration
+dbname="telescope"
+dbuser="chris"
+

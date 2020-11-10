@@ -7,6 +7,7 @@
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
 import time
+import psycopg2
 import os
 import sys
 from song_daemonize_AUTOTUNE import Daemon
@@ -65,12 +66,20 @@ class commander(Daemon):
             server2.allow_reuse_address = True
         except Exception as e:
             print('error:',e)
+
+        ## Setup database connection
+        try:
+            #conn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
+            print("dbname=" + conf.dbname + " user=" + conf.dbuser)
+        except Exception as e:
+            print('error:',e)
             
         ###################################################
         #Setting a handle for the PWI2-class in PW_Class.py. 
         #This makes it possible for the server to call the correct functions in PWI2
         
         PWI=PW.PWI4()
+
         
         ###################################################
         # I define all the functions in PWI as a new function that the server can call them
@@ -268,6 +277,17 @@ class commander(Daemon):
             reply = PWI.startMntHoming()
             return reply
         
+        def updatedb():
+        """Writes telescope status to postgresql database
+        """
+        cursor = conn.cursor()
+        info=getALL() 
+        #### NEDS CHECK #################
+        for key in info.keys():
+            cmd = "UPDATE %s SET value=%f WHERE info_id=%s" % (dbname, info[key],key)
+            cursor.execute(cmd)
+
+        ####################################
         
         ########################################################################## register functions for server2 - handling stop commands
         server2.register_function(FocSTOP)
@@ -335,6 +355,15 @@ class commander(Daemon):
             while RUNNING:
                 server2.handle_request()
         thread_value = _thread.start_new_thread(server2thread,())
+        print('Thread successful')
+
+        #Db thread. Updates sql db values
+        def dbthread():
+            while RUNNING:
+                updatedb()
+
+                
+        thread_value = _thread.start_new_thread(dbthread,())
         print('Thread successful')
         #server2thread()
         
