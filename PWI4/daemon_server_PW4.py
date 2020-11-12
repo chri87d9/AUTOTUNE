@@ -69,7 +69,7 @@ class commander(Daemon):
 
         ## Setup database connection
         try:
-            #conn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
+            conn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
             print("dbname=" + conf.dbname + " user=" + conf.dbuser)
         except Exception as e:
             print('error:',e)
@@ -278,14 +278,20 @@ class commander(Daemon):
             return reply
         
         def updatedb():
-        """Writes telescope status to postgresql database
-        """
-        cursor = conn.cursor()
-        info=getALL() 
-        #### NEDS CHECK #################
-        for key in info.keys():
-            cmd = "UPDATE %s SET value=%f WHERE info_id=%s" % (dbname, info[key],key)
-            cursor.execute(cmd)
+            cursor = conn.cursor()
+            info={x.split("=")[0]:x.split("=")[1] for x in PWI.getALL().split("\n")[:-1]} 
+            for key in info.keys():
+                if info[key]=="true" or info[key]=="false":
+                    info[key]= 1 if info[key]=="true" else 0
+                else:
+                    try:
+                        info[key]=float(info[key])
+                    except:
+                        info[key]=0
+                cmd = "UPDATE info SET value=%f WHERE info_id='%s'" % (float(info[key]),key)
+                print(cmd)
+                #cursor.execute("SELECT * FROM info")
+                #conn.comit
 
         ####################################
         
@@ -361,6 +367,8 @@ class commander(Daemon):
         def dbthread():
             while RUNNING:
                 updatedb()
+                time.sleep(5)
+
 
                 
         thread_value = _thread.start_new_thread(dbthread,())
