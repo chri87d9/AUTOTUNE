@@ -162,7 +162,6 @@ class PWI4():
         """
         self.update()
         ALL=self.status
-        print(ALL)
         return ALL
 
     def getRA2000(self):

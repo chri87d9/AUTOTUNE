@@ -22,5 +22,6 @@ park_azm = 180 #parking azimuth for the telescope.
 
 #Database configuration
 dbname="telescope"
+tablename="info"
 dbuser="chris"
 

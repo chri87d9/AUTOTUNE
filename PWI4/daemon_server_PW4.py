@@ -69,8 +69,8 @@ class commander(Daemon):
 
         ## Setup database connection
         try:
-            conn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
             print("dbname=" + conf.dbname + " user=" + conf.dbuser)
+            dbconn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
         except Exception as e:
             print('error:',e)
             
@@ -278,7 +278,7 @@ class commander(Daemon):
             return reply
         
         def updatedb():
-            cursor = conn.cursor()
+            cursor = dbconn.cursor()
             info={x.split("=")[0]:x.split("=")[1] for x in PWI.getALL().split("\n")[:-1]} 
             for key in info.keys():
                 if info[key]=="true" or info[key]=="false":
@@ -289,9 +289,9 @@ class commander(Daemon):
                     except:
                         info[key]=0
                 cmd = "UPDATE info SET value=%f WHERE info_id='%s'" % (float(info[key]),key)
-                print(cmd)
-                #cursor.execute("SELECT * FROM info")
-                #conn.comit
+                cursor.execute(cmd)
+                dbconn.commit()
+                print(key + " Updated: " + str(cursor.rowcount))
 
         ####################################
         
