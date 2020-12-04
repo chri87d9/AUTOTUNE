@@ -15,7 +15,7 @@ import getopt
 import xmlrpc.client  
 import PW4 as PW
 import _thread
-import PWI4_config as conf
+import PWI4_config_new as conf
 
 
 
@@ -69,8 +69,8 @@ class commander(Daemon):
 
         ## Setup database connection
         try:
-            print("dbname=" + conf.dbname + " user=" + conf.dbuser)
-            dbconn = psycopg2.connect("dbname=" + conf.dbname + " user=" + conf.dbuser)
+            print("host=" + conf.dbhost + " dbname=" + conf.dbname + " user=" + conf.dbuser+ " password=" + conf.dbpass)
+            dbconn = psycopg2.connect("host=" + conf.dbhost + " dbname=" + conf.dbname + " user=" + conf.dbuser+ " password=" + conf.dbpass)
         except Exception as e:
             print('error:',e)
             
@@ -288,10 +288,9 @@ class commander(Daemon):
                         info[key]=float(info[key])
                     except:
                         info[key]=0
-                cmd = "UPDATE info SET value=%f WHERE info_id='%s'" % (float(info[key]),key)
+                cmd = "UPDATE %s SET value=%f WHERE info_id='%s'" % (conf.dbtable, float(info[key]),key)
                 cursor.execute(cmd)
                 dbconn.commit()
-                print(key + " Updated: " + str(cursor.rowcount))
 
         ####################################
         

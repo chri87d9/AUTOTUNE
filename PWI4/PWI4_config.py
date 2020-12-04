@@ -21,7 +21,9 @@ park_alt = 25 #parking altitude for the telescope
 park_azm = 180 #parking azimuth for the telescope.
 
 #Database configuration
-dbname="telescope"
-tablename="info"
-dbuser="chris"
+dbhost=""
+dbname=""
+dbtable=""
+dbuser=""
+dbpass=""
 
