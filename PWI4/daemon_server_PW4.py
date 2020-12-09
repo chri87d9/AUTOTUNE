@@ -6,6 +6,7 @@
 
 from xmlrpc.server import SimpleXMLRPCServer
 from xmlrpc.server import SimpleXMLRPCRequestHandler
+from datetime import datetime
 import time
 import psycopg2
 import os
@@ -292,13 +293,52 @@ class commander(Daemon):
                 dbconn.commit()
 
 
+        command_dict={
+                #COMMAND IN DB : [nr arguments, expected type,command1, command2]
+                "MOVE_AZ_ALT" :  [2,int,setTargetAltAzm,MntMoveAltAzm],
+                #"SET_OFF"     : setOffset,
+                "MOVE_RA_DEC" : [2,str,setTargetRaDecJ2000,MntMoveRaDecJ2000]
+                }
+
         def readcoms():
             cursor = dbconn.cursor()
-            cmd = "SELECT * FROM %s where done=true" % (conf.conmtable, float(info[key]),key)
+            cmd = "SELECT com_idx,com,timestamp FROM %s WHERE %s.done=false" % (conf.comtable,conf.comtable)
             cursor.execute(cmd)
             commands = cursor.fetchall()
             for row in commands:
-                print(row["com"])
+                com = row[1].split(" ")
+                idx=row[0]
+                tel_com = command_dict.get(com[0],False)
+                tdelta=row[2] - datetime.utcnow()
+                min_delta=abs(tdelta.total_seconds()/60)
+                if min_delta>=20:
+                    log_str="Command too old: %.1f minutes" % min_delta
+                    print(log_str)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
+                    cursor.execute(cmd)
+                    dbconn.commit()
+                    continue
+                elif not tel_com:
+                    log_str="Command %s not defined" % com[0]
+                    print(log_str)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
+                    cursor.execute(cmd)
+                    dbconn.commit()
+                    continue
+                elif not len(com)==tel_com[0]+1:
+                    log_str="Invalid number of arguments expected %i got %i" % (len(com), tel_com[0])
+                    print(log_str)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
+                    cursor.execute(cmd)
+                    dbconn.commit()
+                    continue
+                if tel_com[2](tel_com[1](com[1]), tel_com[1](com[2])) and tel_com[3]():
+                    log_str="Command executed succesfully"
+                    print(log_str)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
+                    cursor.execute(cmd)
+                    dbconn.commit()
+
         ####################################
         
         ########################################################################## register functions for server2 - handling stop commands
@@ -373,13 +413,21 @@ class commander(Daemon):
         def dbthread():
             while RUNNING:
                 updatedb()
-                readcoms()
                 time.sleep(5)
 
 
                 
         thread_value = _thread.start_new_thread(dbthread,())
-        print('Thread successful')
+        print('Update Thread successful')
+        def comthread():
+            while RUNNING:
+                readcoms()
+                time.sleep(5)
+
+
+                
+        thread_value = _thread.start_new_thread(comthread,())
+        print('Com Thread successful')
         #server2thread()
         
         #The server starts taking requests
