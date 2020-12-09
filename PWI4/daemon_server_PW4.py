@@ -69,8 +69,7 @@ class commander(Daemon):
 
         ## Setup database connection
         try:
-            print("host=" + conf.dbhost + " dbname=" + conf.dbname + " user=" + conf.dbuser+ " password=" + conf.dbpass)
-            dbconn = psycopg2.connect("host=" + conf.dbhost + " dbname=" + conf.dbname + " user=" + conf.dbuser+ " password=" + conf.dbpass)
+            dbconn = psycopg2.connect("host=" + conf.dbhost + " dbname=" + conf.dbname + " user=" + conf.dbuser + " password=" + conf.dbpass)
         except Exception as e:
             print('error:',e)
             
@@ -288,10 +287,18 @@ class commander(Daemon):
                         info[key]=float(info[key])
                     except:
                         info[key]=0
-                cmd = "UPDATE %s SET value=%f WHERE info_id='%s'" % (conf.dbtable, float(info[key]),key)
+                cmd = "UPDATE %s SET value=%f WHERE info_id='%s'" % (conf.inftable, float(info[key]),key)
                 cursor.execute(cmd)
                 dbconn.commit()
 
+
+        def readcoms():
+            cursor = dbconn.cursor()
+            cmd = "SELECT * FROM %s where done=true" % (conf.conmtable, float(info[key]),key)
+            cursor.execute(cmd)
+            commands = cursor.fetchall()
+            for row in commands:
+                print(row["com"])
         ####################################
         
         ########################################################################## register functions for server2 - handling stop commands
@@ -366,6 +373,7 @@ class commander(Daemon):
         def dbthread():
             while RUNNING:
                 updatedb()
+                readcoms()
                 time.sleep(5)
 
 
