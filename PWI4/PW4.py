@@ -147,7 +147,6 @@ class PWI4():
         
         """
         self.__init__()
-        return True
 
 
     def getALL(self):
@@ -334,13 +333,10 @@ class PWI4():
         self.update()
         if self.MNT_connection == "true":
             print("Mount is connected")
-            return True
         if self.MNT_connection == "false":
-            print("Mount is NOT connected")
-            return False
+            raise Exception("Mount is NOT connected")
         else:
-            print("ERROR: Mount state unable to be read!")
-            return False
+            raise Exception("ERROR: Mount state unable to be read!")
 
 
     def getFOC_CONNECT(self):
@@ -359,13 +355,10 @@ class PWI4():
         
         if self.FOC_connection == "true":
             print("Focuser is connected")
-            return True
         if self.FOC_connection == "false":
-            print("Focuser is NOT connected")
-            return False
+            raise Exception("Focuser is NOT connected")
         else:
-            print("ERROR: Connection to focuser is not reachable")
-            return False
+            raise Exception("ERROR: Connection to focuser is not reachable")
 
     def getROT_CONNECT(self):
         """
@@ -388,11 +381,9 @@ class PWI4():
             print("Rotator is connected")
             return self.ROT_connection
         if self.ROT_connection == "false":
-            print("Rotator is not connected")
-            return False
+            raise Exception("Rotator is not connected")
         else:
-            print("ERROR: Rotator connection is not reachable.")
-            return False
+            raise Exception("ERROR: Rotator connection is not reachable.")
 
     def getIsTrackingOn(self):
         """
@@ -409,10 +400,8 @@ class PWI4():
        
         if  self.MNT_tracking == "true":
             print("Tracking is ON.")
-            return True 
         else:
-            print("Tracking is OFF.")
-            return False 
+            raise Exception("Tracking is OFF.")
         
     def getTrackingRMSError(self):
         """
@@ -492,11 +481,9 @@ class PWI4():
         #Checks wheter the wanted position is already the current position. DOES NOT WORK FOR SOME REASON???
         if "%s"%(position) == self.FOC_pos:
             print('The new requested position is already the current position of the focuser. Nothing will happen.')
-            return True
 
         if position < 0:
-            print('The position is less than 0 microns. The movement will NOT be executed')
-            return False
+            raise Exception('The position is less than 0 microns. The movement will NOT be executed')
 
         #Sends command to change position of focuser
         cmd=requests.get(self.link+"focuser/goto?target=%i"%(position))
@@ -515,10 +502,8 @@ class PWI4():
         self.update()
         if abs(self.FOC_pos - position) < 5:  #Checks if the new position is close enough to target. Set to 5 microns initially.
             print('The focuser has stopped at: %s microns'%(self.FOC_pos))
-            return True
         else: 
-            print('The focuser did not reach the target. The current position is %s microns'%(self.FOC_pos))
-            return False
+            raise Exception('The focuser did not reach the target. The current position is %s microns'%(self.FOC_pos))
        
         
     def ConnectFOC(self):
@@ -544,9 +529,7 @@ class PWI4():
             self.update()
             time.sleep(1)
             if time.time() > timeout:
-                print('A timeout of %i sec has occured.'%(timeout_sec))
-                return False #stop if the timeout is reached!
-        return True
+                raise Exception('A timeout of %i sec has occured.'%(timeout_sec))
 
     def DisconnectFOC(self):
         """
@@ -562,7 +545,6 @@ class PWI4():
         self.update()
         if self.FOC_connection == "false":
             print('The focuser is already disconnected')
-            return True
 
         cmd = requests.get(self.link+"focuser/disable")
         self.update()
@@ -574,9 +556,7 @@ class PWI4():
             time.sleep(1)
             if time.time() > timeout:
                 print('A timeout of %i has occured.'%timeout_sec)
-                print('There was error disconnecting the focuser')
-                return False
-        return True
+                raise Exception('There was error disconnecting the focuser')
     
     # def MoveFocuserInc(self,increment):
     #     """
@@ -622,7 +602,6 @@ class PWI4():
     #     self.update()
     #     if abs(self.FOC_pos - self.FocInc_target) < 5: #checks that the new position is within 5 micron of the target. 
     #         print('Focuser set at position: %s'%(self.Foc_pos))
-    #         return True
     #     else:
     #         print('The focuser did not reach STOPthe target position. The current position is %s microns'%(self.Foc_pos))
     #         return False
@@ -650,10 +629,8 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout:
-                print('A timeout of %i seconds occured.'%(timeout_sec))
-                return False
+                raise Exception('A timeout of %i seconds occured.'%(timeout_sec))
         print("The focuser has now stopped, at %s microns"%(self.FOC_pos))
-        return True
     
     
         
@@ -694,7 +671,6 @@ class PWI4():
     #             print('There has been a timeout of %i seconds'%(60+timeout_sec))
     #             return False
     #     print('The focuser has stopped moving and is positioned at %s'%(self.FOC_pos))
-    #     return True
         
     
     
@@ -726,7 +702,6 @@ class PWI4():
         self.update()
         if self.MNT_connection == "true" and self.MNT_AzmMotor == "true" and self.MNT_AltMotor == "true":
             print('The mount is already connected and energized.')
-            return True
         cmd = requests.get(self.link+"mount/connect")
         self.update()
         time.sleep(1)
@@ -737,8 +712,7 @@ class PWI4():
             self.update()
             time.sleep(1)
             if time.time() > timeout:
-                print('The connection timed-out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The connection timed-out after %i seconds'%(timeout_sec))
         print('Mount is connected. Energizing motors now - please wait')
         time.sleep(1)
         enableAzm = requests.get(self.link+"mount/enable/axis=0")
@@ -751,10 +725,8 @@ class PWI4():
             time.sleep(1)
             self.update()
             if time.time() > timeout + 30:
-                print('There was a timeout during the energizing of the motors')
-                return False
+                raise Exception('There was a timeout during the energizing of the motors')
         print('Motors are energized! You can proceed.')
-        return True
 
 
     def DisconnectMNT(self):
@@ -769,7 +741,6 @@ class PWI4():
         self.update()
         if self.MNT_connection == "false":
             print('The mount is already disconnected')
-            return True
         #disableAzm = requests.get(self.link+"mount/disable?axis=0")
         #disableAlt = requests.get(self.link+"mount/disable?axis=1")
         time.sleep(2)
@@ -783,10 +754,8 @@ class PWI4():
             self.update()
             time.sleep(2)
             if time.time() > timeout:
-                print('A timeout of %i sec has occured.'%(timeout_sec))
-                return False #stop if the timeout is reached!
+                raise Exception('A timeout of %i sec has occured.'%(timeout_sec))
         print('Mount disconnected!')
-        return True
      
     def MntMotorReset(self):
         """
@@ -812,10 +781,8 @@ class PWI4():
         self.update()
         
         if self.MNT_AltMotor != "true" and self.MNT_AzmMotor != "true":
-            print('There was an error in the resetting of the motors')
-            return False
+            raise Exception('There was an error in the resetting of the motors')
         
-        return True
 
 
     def checkFormatRaDec(self,RA,DEC):
@@ -936,8 +903,7 @@ class PWI4():
         #formats are accepted: HH:MM:SS.SS         
         format_err = self.checkFormatRaDec(RA,DEC)        
         if format_err != 0:
-            print("Errors in input format. Tracking will NOT be started")
-            return False
+            raise Exception("Errors in input format. Tracking will NOT be started")
         
         
         ##################################################################################
@@ -975,13 +941,11 @@ class PWI4():
                         time.sleep(2)                   
                         self.update()
                         if time.time() > timeout:
-                            print('A timeout of %i seconds has occured'%(timeout_sec))
-                            return False
+                            raise Exception('A timeout of %i seconds has occured'%(timeout_sec))
                     print('The telescope is on target')
                 elif int(str(star_alt)[0:1]) < horizon_limit:
                     print('The target is below the horizon-limit of %i deg'%(horizon_limit))
-                    print('The tracking will NOT be started.')
-                    return False
+                    raise Exception('The tracking will NOT be started.')
                 
                 
             elif (str(star_alt)[2:3]) == ':':    
@@ -999,14 +963,10 @@ class PWI4():
                         time.sleep(2)                   
                         self.update()
                         if time.time() > timeout:
-                            print('A timeout of %i seconds has occured'%(timeout_sec))
-                            return False
+                            raise Exception('A timeout of %i seconds has occured'%(timeout_sec))
                     print('The telescope is on target')
                 elif int(str(star_alt)[0:2]) < horizon_limit:
-                    print('The target is below the horizon-limit of %i deg'%(horizon_limit))
-                    print('The tracking will NOT be started.')
-                    return False
-        return True
+                    raise Exception('The target is below the horizon-limit of %i deg'%(horizon_limit) +' The tracking will NOT be started.')
  
 
 
@@ -1026,7 +986,6 @@ class PWI4():
         #self.update()
         #if self.MNT_tracking == "false":
         #    print('The mount has already stopped tracking')
-        #    return True
 
 
         stop = requests.get(self.link+"mount/tracking_off")
@@ -1039,17 +998,14 @@ class PWI4():
             time.sleep(1)
             self.update()
             if time.time() > timeout:
-                print('This session has timed-out after %i seconds' %timeout_sec)
-                return False
+                raise Exception('This session has timed-out after %i seconds' %timeout_sec)
         if self.MNT_tracking == "false":
             print('The tracking is OFF and the mount has stoppped.')
             time.sleep(3)
             self.update()
             print('The current position of the telescope is %g\xb0 %g\xb0 (Alt,Azm)'%(float(self.MNT_Alt),float(self.MNT_Azm)))
         else: 
-            print('Something went wrong trying to stop the tracking')
-            return False
-        return True
+            raise Exception('Something went wrong trying to stop the tracking')
 
     def parkMount(self):
         """
@@ -1081,12 +1037,10 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout:
-                print('The session has timed out after %i seconds' %(timeout_sec))
-                return False
+                raise Exception('The session has timed out after %i seconds' %(timeout_sec))
         time.sleep(2)
         self.stopTracking() #Stops the tracking of the parking point
         
-        return True
         
    
     def MountSTOP(self):
@@ -1118,10 +1072,8 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout:
-                print('The session has timed-out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session has timed-out after %i seconds'%(timeout_sec))
         print('The mount has stopped')
-        return True
 
     def MntMotorEnable(self):
         """
@@ -1148,10 +1100,8 @@ class PWI4():
             print('Waiting for motors to energize - please wait')
             time.sleep(2)
             if time.time() > timeout:
-                print("The session has timed out after %i seconds"%(timeout_sec))
-                return False
+                raise Exception("The session has timed out after %i seconds"%(timeout_sec))
         print('The motors have energized.')
-        return True
         
     def MntMotorDisable(self):
         """
@@ -1178,10 +1128,8 @@ class PWI4():
             time.sleep(1)
             self.update()
             if time.time() > timeout:
-                print('The session has timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session has timed out after %i seconds'%(timeout_sec))
         print('The motors have been disabled.')
-        return True
         
     # def MntMoveIncRaDec(self,RA,DEC):
     #     """
@@ -1215,7 +1163,6 @@ class PWI4():
     #             print('The session timed out after %i seconds'%(timeout_sec))
     #             return False
     #     print('The movement is done. The telescope is now tracking.')
-    #     return True
         
     
     # def MntMoveIncAltAzm(self,Alt,Azm):
@@ -1247,7 +1194,6 @@ class PWI4():
     #             print('The session has timed out after %i seconds'%(timeout_sec))
     #             return False
     #     print('The movement is done. The tracking is on.')
-    #     return True
     
     
 
@@ -1277,9 +1223,7 @@ class PWI4():
         print('Moving mount - please wait')
         check = self.checkFormatRaDec(RA,DEC)
         if check != 0:
-            print('Error')
-            print('There is an error in the format of the RA/DEC. Tracking will NOT be started.')
-            return False
+            raise Exception('There is an error in the format of the RA/DEC. Tracking will NOT be started.')
         
         star_init = SSCA.star_pos.__init__(self,site=conf.site)
         star_alt = SSCA.star_pos.star_alt(self,RA,DEC)
@@ -1304,16 +1248,12 @@ class PWI4():
                 time.sleep(2)
                 self.update()
                 if time.time() > timeout: 
-                    print('The session has timed out after %i seconds' %(timeout_sec))
-                    return False
+                    raise Exception('The session has timed out after %i seconds' %(timeout_sec))
             print('The telescope is on target and is tracking')
         
         elif int(alt_degree) < horizon_limit: 
-            print('The target is below the horizon limit of %i degrees'%(horizon_limit))
-            print('Tracking will NOT be started!')
-            return False
+            raise Exception('The target is below the horizon limit of %i degrees'%(horizon_limit))
 
-        return True
 
         
     def MntMoveAltAzm(self):
@@ -1343,16 +1283,13 @@ class PWI4():
         #check function for Alt/azm
         errors = self.checkFormatAltAzm(Alt,Azm)
         if errors != 0:
-            print('There was an error with the Alt/Azm format')
-            print('The movement will NOT begin')
-            return False
+            raise Exception('There was an error with the Alt/Azm format')
         horizon_limit = conf.NOVO_lower_limit #degrees above the horizon where the telescope cannot track below. SHOULD BE CHANGE ALSO IN PWI4 and in MntMoveRaDec and MntMoveRaDecJ2000
 #        if Alt > 90:
 #            print('The altitude must be lower than 90 deg. The mount will NOT be moved')
 #            return False
         if Alt < horizon_limit:
-            print('The altitude must be higher than %i degrees. The mount will NOT be moved'%(horizon_limit))
-            return False
+            raise Exception('The altitude must be higher than %i degrees. The mount will NOT be moved'%(horizon_limit))
 
         
         print('Starting movement in a moment - please wait')
@@ -1367,11 +1304,8 @@ class PWI4():
             self.update()
             time.sleep(2)
             if time.time() > timeout:
-                print('This session has timedout after %i seconds'%(timeout_sec))
-                print('The position at timeout was Alt: %s and Azm: %s'%(float(self.MNT_Alt),float(self.MNT_Azm)))
-                return False
+                raise Exception('This session has timedout after %i seconds'%(timeout_sec))
         print('The mount is on target and is tracking at %.3f\xb0,%.3f\xb0 (Alt/Azm)'%(float(self.MNT_Alt),float(self.MNT_Azm)))
-        return True
         
     def startTracking(self):
         """
@@ -1397,10 +1331,8 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout: 
-                print('The session has timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session has timed out after %i seconds'%(timeout_sec))
         print('Tracking is now on')
-        return True
         
     
     def LoadPointingModel(self,filename):
@@ -1431,10 +1363,8 @@ class PWI4():
         self.update()
         if self.MNT_PointingModel == filename:
             print('The poiting model %s has been loaded successfully.'%(filename))
-            return True
         else:
-            print('There was an error loading in the pointing model.')
-            return False
+            raise Exception('There was an error loading in the pointing model.')
 
 
 
@@ -1522,9 +1452,7 @@ class PWI4():
         print('Adding point to model - please wait')
         check = self.checkFormatRaDec(RA,DEC)
         if check != 0:
-            print('There was an error in the format of RA/DEC')
-            print('No point will be added to the pointing model')
-            return False
+            raise Exception('There was an error in the format of RA/DEC')
 
         cmd = requests.get(self.link+"mount/model/add_point?ra_j2000_hours=%s&dec_j2000_degs=%s"%(RA.replace(":","%20"),DEC.replace(":","%20")))
         timeout_sec = 30 #number of seconds before timing out the session. 
@@ -1536,12 +1464,10 @@ class PWI4():
             time.sleep(1)
             self.update()
             if time.time() > timeout:
-                print('The session has timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session has timed out after %i seconds'%(timeout_sec))
         print('The point at %s, %s (RA,DEC) has been added to the current pointing model'%(RA,DEC))
         self.update()
         print('There are now %s points in the pointing model'%(self.MNT_PointingModelPoints))
-        return True
     
 
     
@@ -1567,11 +1493,9 @@ class PWI4():
         try:
             pxp = filename.split(".")
             if pxp[1] != "pxp":
-                print('The filename needs to end with .pxp')
-                return False
+                raise Exception('The filename needs to end with .pxp')
         except: 
-            print('The filename must contain a ".pxp"')
-            return False
+            raise Exception('The filename must contain a ".pxp"')
 
         #testing for alphanumeric name
         copy = pxp[0]
@@ -1580,10 +1504,7 @@ class PWI4():
         check = copy.isalnum()
 
         if check == False:
-            print('Error:')
-            print('The filename contains other characters than alphanumeric, "-" and "_".')
-            print('The model will not be saved.')
-            return False
+            raise Exception('The filename contains other characters than alphanumeric, "-" and "_".')
         
         print('The pointing model will be saved as %s momentarily - please wait.' %(filename))
         cmd = requests.get(self.link+"mount/model/save?filename=%s"%(filename))
@@ -1592,10 +1513,8 @@ class PWI4():
         time.sleep(1)
         if self.MNT_PointingModel == "%s"%(filename):
             print('Model saved. Location: Documents/PlaneWave Instruments/PWI4/Mount')
-            return True
         else: 
-            print('The pointing model was not saved correctly')
-            return False
+            raise Exception('The pointing model was not saved correctly')
         
       
     
@@ -1623,10 +1542,8 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout:
-                print('This session has timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('This session has timed out after %i seconds'%(timeout_sec))
         print('The pointing model has been cleared')
-        return True
 
 
 
@@ -1647,7 +1564,6 @@ class PWI4():
         self.update()
         if self.FANS_state == 'True':
             print('The fans are already on')
-            return True
         else:
             cmd = requests.get(self.link+'?&device=fans&cmd=turnon')
             timeout_sec = 15 #number of seconds before timeout
@@ -1657,10 +1573,8 @@ class PWI4():
                 time.sleep(3)
                 self.update()
                 if time.time() > timeout:
-                    print('The session has timed out after %i seconds'%(timeout_sec))
-                    return False
+                    raise Exception('The session has timed out after %i seconds'%(timeout_sec))
         print('The fans are turned on')
-        return True
 
     def FansOFF(self):
         """
@@ -1679,7 +1593,6 @@ class PWI4():
         self.update()
         if self.FANS_state == 'False':
             print('The fans are already off.')
-            return True
         else:
             cmd = requests.get(self.link+'?&device=fans&cmd=turnoff')
             timeout_sec = 15 #Number of seconds before timeout
@@ -1689,10 +1602,8 @@ class PWI4():
                 time.sleep(2)
                 self.update()
                 if time.time() > timeout:
-                    print('The session has timed out after %i seconds'%(timeout_sec))
-                    return False
+                    raise Exception('The session has timed out after %i seconds'%(timeout_sec))
             print('The fans are turned off')
-            return True
     
 
     def Rot_Move(self,position):
@@ -1709,12 +1620,10 @@ class PWI4():
             False if there is a timeout
         """
         if position > 360:
-            print('The new position needs to be below 360 degrees.')
-            return False
+            raise Exception('The new position needs to be below 360 degrees.')
         
         if position < 0: 
-            print('The new position needs to be above 0 degrees.')
-            return False
+            raise Exception('The new position needs to be above 0 degrees.')
         
         print('The rotator will start moving momentarily - please wait')
         
@@ -1728,12 +1637,9 @@ class PWI4():
             print('The rotator is moving, current position is %s deg - please wait'%(self.ROT_position))
             time.sleep(5)
             if time.time() > timeout:
-                print('There has been a timeout of %s seconds'%(timeout_sec))
-                print('The rotator position at timeout was %s deg'%(self.ROT_position))
-                return False
+                raise Exception('There has been a timeout of %s seconds'%(timeout_sec))
         print('The rotator has stopped and is at %s deg'%(self.ROT_position))
         
-        return True
 
         
         
@@ -1762,10 +1668,8 @@ class PWI4():
             time.sleep(2)
             self.update()
             if time.time() > timeout:
-                print('The session has timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session has timed out after %i seconds'%(timeout_sec))
         print('The rotator has stopped')
-        return True
     
     
     # def Rot_StartHoming(self):
@@ -1796,7 +1700,6 @@ class PWI4():
     #     self.update()
     #     print('The rotator has finished homing - current position is %s deg' %(self.ROT_position))
         
-    #     return True
     
     def Rot_derotateStart(self):
         """
@@ -1819,10 +1722,8 @@ class PWI4():
             print('Derotation not enabled yet - please wait')
             time.sleep(1)
             if time.time() > timeout:
-                print("The session has timedout after %i seconds"%(timeout_sec))
-                return False
+                raise Exception("The session has timedout after %i seconds"%(timeout_sec))
         print('Alt-Azm field de-rotation has been enabled.')
-        return True
     
     
     def Rot_derotateStop(self):
@@ -1846,10 +1747,8 @@ class PWI4():
             self.update()
             time.sleep(1)
             if time.time() > timeout:
-                print('The session timed out after %i seconds'%(timeout_sec))
-                return False
+                raise Exception('The session timed out after %i seconds'%(timeout_sec))
         print('The Alt-Azm de-rotation has been disabled')
-        return True
     
     def getRotatorDerotate(self):
         """
@@ -1874,8 +1773,7 @@ class PWI4():
             reply = "The Alt/Azm deratote is OFF"
             return reply
         else:
-            print('There was an error')
-            return False
+            raise Exception('There was an error')
             
 
     def setTargetRaDecJ2000(self,RA,DEC):
@@ -1902,7 +1800,6 @@ class PWI4():
         try:
             if self.RAJ2000 == RA or self.DECJ2000 == DEC:
                 print('The new coordinates are already set')
-                return True
         except Exception as e:
             print(e)
     
@@ -1938,12 +1835,10 @@ class PWI4():
        
         #check if they are set correctly
         if self.RAJ2000 != RA or self.DECJ2000 != DEC:
-            print('There was an error setting RA/DEC')
-            return False
+            raise Exception('There was an error setting RA/DEC')
         
 
         print('The new coordinates have been set')
-        return True
     
     def setTargetAltAzm(self,Alt,Azm):
         """
@@ -1968,7 +1863,6 @@ class PWI4():
         try:
             if self.Alt == Alt and self.Azm == Azm:
                 print('The new coordinates is already set')
-                return True
         except Exception as e:
             print(e)
         
@@ -1978,11 +1872,9 @@ class PWI4():
         
         #check if they are corretly set in self
         if self.Alt != Alt or self.Azm != Azm:
-            print('There was an error setting the new coordinates')
-            return False
+            raise Exception('There was an error setting the new coordinates')
         
         print('The new Alt/Azm coordinates have been set')
-        return True
     
     def setTargetRaDec(self,Ra,Dec):
         """
@@ -2008,7 +1900,6 @@ class PWI4():
         try:
             if self.RA == Ra or self.DEC == Dec:
                 print('The new coordinates are already set')
-                return True
         except Exception as e:
             print(e)
         
@@ -2016,10 +1907,8 @@ class PWI4():
         self.DEC = Dec
         
         if self.RA != Ra or self.DEC != Dec:
-            print('There was an error setting the new coordinates')
-            return False
+            raise Exception('There was an error setting the new coordinates')
         print('The new coordinates have been set')
-        return True
         
 
     

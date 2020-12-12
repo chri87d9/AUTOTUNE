@@ -332,12 +332,20 @@ class commander(Daemon):
                     cursor.execute(cmd)
                     dbconn.commit()
                     continue
-                if tel_com[2](tel_com[1](com[1]), tel_com[1](com[2])) and tel_com[3]():
-                    log_str="Command executed succesfully"
-                    print(log_str)
-                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
+                try: tel_com[2](tel_com[1](com[1]), tel_com[1](com[2]))
+                except Exception as e:
+                    print(e)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,e, idx)
                     cursor.execute(cmd)
                     dbconn.commit()
+                    continue
+                try: tel_com[3]()
+                except Exception as e:
+                    print(e)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,e, idx)
+                    cursor.execute(cmd)
+                    dbconn.commit()
+                    continue
 
         ####################################
         
