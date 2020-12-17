@@ -52,19 +52,19 @@ class commander(Daemon):
     def run(self):
         global RUNNING
         RUNNING = True
-         
        ### server handling all other functions than stop functions.
         try:
-            server = SimpleXMLRPCServer((conf.NOVO_daemon_host, conf.NOVO_daemon_port1), requestHandler=RequestHandler, logRequests=False,allow_none=True)
+            server = SimpleXMLRPCServer((conf.NOVO_daemon_host, conf.NOVO_daemon_port1),\
+                                        requestHandler=RequestHandler, logRequests=False,allow_none=True)
             server.allow_reuse_address = True
         except Exception as e:
             print('error: ',e)
-            
-            
-        ### server handling the stop functions. This is to being able to send stop commands while the "while-loops" are running.
+            ### server handling the stop functions. This is to being able to send stop commands while the "while-loops" are running.
         try:
-            server2 = SimpleXMLRPCServer((conf.NOVO_daemon_host, conf.NOVO_daemon_port2),requestHandler=RequestHandler,logRequests=False,allow_none=True)
+            server2 = SimpleXMLRPCServer((conf.NOVO_daemon_host, conf.NOVO_daemon_port2),\
+                                        requestHandler=RequestHandler,logRequests=False,allow_none=True)
             server2.allow_reuse_address = True
+
         except Exception as e:
             print('error:',e)
 
@@ -348,6 +348,8 @@ class commander(Daemon):
                         tel_com["func"]()
                     cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,"Ok", idx)
                 except Exception as e:
+                    if "HTTP" in e:
+                        e="Error, no connection!"
                     cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,e, idx)
 
                 cursor.execute(cmd)
@@ -417,11 +419,17 @@ class commander(Daemon):
         #####################################################################
         
         #Threading the two servers such that they run on their individual thread.
+        print("Starting server threds")
         def server2thread():
             while RUNNING:
                 server2.handle_request()
         thread_value = _thread.start_new_thread(server2thread,())
         print('Thread successful')
+
+        #The server starts taking requests
+        print("Starting handle_request loop...")
+        while RUNNING:
+            server.handle_request()
 
         #Db thread. Updates sql db values
         def dbthread():
@@ -444,10 +452,6 @@ class commander(Daemon):
         print('Com Thread successful')
         #server2thread()
         
-        #The server starts taking requests
-        print("Starting handle_request loop...")
-        while RUNNING:
-            server.handle_request()
 
 			
 def main():
