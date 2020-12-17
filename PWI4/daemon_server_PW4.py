@@ -276,7 +276,20 @@ class commander(Daemon):
         def startMntHoming():
             reply = PWI.startMntHoming()
             return reply
+        def STOP():
+            PWI.FocSTOP()
+            PWI.MountSTOP()
+            PWI.RotSTOP()
+        def gotoRaDec(Ra,Dec):
+            setTargetRaDecJ2000(Ra,Dec)
+            MntMoveRaDecJ2000()
+            startTracking()
         
+        def gotoAzAlt(Alt,Az):
+            setTargetAltAzm(Alt,Az)
+            MntMoveAltAzm()
+            startTracking()
+
         def updatedb():
             cursor = dbconn.cursor()
             info={x.split("=")[0]:x.split("=")[1] for x in PWI.getALL().split("\n")[:-1]} 
@@ -294,10 +307,12 @@ class commander(Daemon):
 
 
         command_dict={
-                #COMMAND IN DB : [nr arguments, expected type,command1, command2]
-                "MOVE_AZ_ALT" :  [2,int,setTargetAltAzm,MntMoveAltAzm],
-                #"SET_OFF"     : setOffset,
-                "MOVE_RA_DEC" : [2,str,setTargetRaDecJ2000,MntMoveRaDecJ2000]
+                "MOVE_AZ_ALT" :  {"nr": 2,"type": int, "func": gotoAzAlt},
+                "MOVE_RA_DEC" : {"nr": 2,"type": str, "func": gotoRaDec},
+                "STOP" : {"nr": 0, "func": STOP},
+                "MNT_CON" : {"nr": 0, "func": ConnectMNT},
+                "MNT_DISCON" : {"nr": 0, "func": DisconnectMNT},
+                "PARK" : {"nr": 0, "func": parkMount}
                 }
 
         def readcoms():
@@ -325,27 +340,18 @@ class commander(Daemon):
                     cursor.execute(cmd)
                     dbconn.commit()
                     continue
-                elif not len(com)==tel_com[0]+1:
-                    log_str="Invalid number of arguments expected %i got %i" % (len(com), tel_com[0])
-                    print(log_str)
-                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,log_str, idx)
-                    cursor.execute(cmd)
-                    dbconn.commit()
-                    continue
-                try: tel_com[2](tel_com[1](com[1]), tel_com[1](com[2]))
+
+                try:
+                    if tel_com["nr"]>0:
+                        tel_com["func"](*[tel_com["type"](x) for x in com[1:]])
+                    else:
+                        tel_com["func"]()
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,"Ok", idx)
                 except Exception as e:
-                    print(e)
                     cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,e, idx)
-                    cursor.execute(cmd)
-                    dbconn.commit()
-                    continue
-                try: tel_com[3]()
-                except Exception as e:
-                    print(e)
-                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,e, idx)
-                    cursor.execute(cmd)
-                    dbconn.commit()
-                    continue
+
+                cursor.execute(cmd)
+                dbconn.commit()
 
         ####################################
         
