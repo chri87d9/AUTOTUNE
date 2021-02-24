@@ -74,7 +74,7 @@ class commander(Daemon):
             
         ###################################################
         #Setting a handle for the PWI2-class in PW_Class.py. 
-        #This makes it possible for the server to call the correct functions in PWI2
+        #This makes it possible for the server to call the correct functions in PWI4
         
         PWI=PW.PWI4()
 
@@ -278,15 +278,25 @@ class commander(Daemon):
             PWI.FocSTOP()
             PWI.MountSTOP()
             PWI.RotSTOP()
-        def gotoRaDec(Ra,Dec):
+        def followRaDec(Ra,Dec):
             setTargetRaDecJ2000(Ra,Dec)
             MntMoveRaDecJ2000()
             startTracking()
+
+        def followAzAlt(Az,Alt):
+            setTargetAltAzm(Alt,Az)
+            MntMoveAltAzm()
+            startTracking()
+
+        def gotoRaDec(Ra,Dec):
+            setTargetRaDecJ2000(Ra,Dec)
+            MntMoveRaDecJ2000()
+            stopTracking()
         
         def gotoAzAlt(Az,Alt):
             setTargetAltAzm(Alt,Az)
             MntMoveAltAzm()
-            startTracking()
+            stopTracking()
 
         def updatedb():
             cursor = dbconn.cursor()
@@ -302,9 +312,13 @@ class commander(Daemon):
                 cmd = "UPDATE %s SET value=%f WHERE info_id='%s'" % (conf.inftable, float(info[key]),key)
                 cursor.execute(cmd)
                 dbconn.commit()
+            if info["mount.is_connected"]==0:
+                ConnectMNT()
 
 
         command_dict={
+                "FOLLOW_AZ_ALT" :  {"nr": 2,"type": int, "func": followAzAlt},
+                "FOLLOW_RA_DEC" : {"nr": 2,"type": str, "func": followRaDec},
                 "MOVE_AZ_ALT" :  {"nr": 2,"type": int, "func": gotoAzAlt},
                 "MOVE_RA_DEC" : {"nr": 2,"type": str, "func": gotoRaDec},
                 "STOP" : {"nr": 0, "func": STOP},
@@ -342,15 +356,18 @@ class commander(Daemon):
                     continue
 
                 try:
+                    print("Executing command now")
                     if tel_com["nr"]>0:
                         tel_com["func"](*[tel_com["type"](x) for x in com[1:]])
                     else:
                         tel_com["func"]()
-                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,"Ok", idx)
+                    cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,"", idx)
+                    print("Command done")
                 except Exception as e:
                     cmd = "UPDATE %s SET done=true, log='%s' WHERE com_idx=%i" % (conf.comtable,"ERROR!", idx)
                     print(e)
 
+                updatedb()
                 cursor.execute(cmd)
                 dbconn.commit()
 
